@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", serif;
+}
+
+@layer base {
+  body {
+    @apply text-gray-900 antialiased;
+  }
+}
+
+.glass {
+  @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-amber-600;
+}
+
+.btn-primary {
+  @apply bg-orange-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-700 transition-all shadow-lg shadow-orange-200 active:scale-95;
+}
+
+.btn-secondary {
+  @apply bg-white text-orange-600 border-2 border-orange-600 px-8 py-3 rounded-full font-semibold hover:bg-orange-50 transition-all active:scale-95;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-orange-50;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-orange-200 rounded-full hover:bg-orange-300 transition-colors;
+}

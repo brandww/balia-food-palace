@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "bktiwari879@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string &&
+        (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidCategory(data) {
+      return hasRequiredFields(['name']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 50;
+    }
+
+    function isValidMenuItem(data) {
+      return hasRequiredFields(['name', 'price', 'categoryId']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.price is number && data.price >= 0 &&
+             data.categoryId is string &&
+             (!('description' in data) || (data.description is string && data.description.size() < 500)) &&
+             (!('image' in data) || isValidUrl(data.image)) &&
+             (!('isAvailable' in data) || data.isAvailable is bool) &&
+             (!('isPopular' in data) || data.isPopular is bool);
+    }
+
+    function isValidReservation(data) {
+      return hasRequiredFields(['name', 'phone', 'date', 'time', 'guests']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.phone is string && data.phone.size() >= 10 && data.phone.size() <= 15 &&
+             data.date is string && data.date.matches("^\\d{4}-\\d{2}-\\d{2}$") &&
+             data.time is string && data.time.size() > 0 &&
+             data.guests is number && data.guests > 0 && data.guests <= 50 &&
+             (!('status' in data) || data.status in ['pending', 'confirmed', 'cancelled']);
+    }
+
+    function isValidUser(data) {
+      return hasRequiredFields(['email', 'role']) &&
+             isValidEmail(data.email) &&
+             data.role == 'admin';
+    }
+
+    // ===============================================================
+    // Match Statements
+    // ===============================================================
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidCategory(request.resource.data);
+    }
+
+    match /menuItems/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidMenuItem(request.resource.data);
+    }
+
+    match /reservations/{reservationId} {
+      allow read: if isAdmin();
+      allow create: if isValidReservation(request.resource.data);
+      allow update: if isAdmin() && isValidReservation(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAdmin() && isValidUser(request.resource.data);
+      allow update: if isAdmin() && isValidUser(request.resource.data);
+    }
+  }
+}

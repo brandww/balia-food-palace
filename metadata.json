@@ -1,0 +1,7 @@
+{
+  "name": "Ballia's Food Palace",
+  "description": "Modern, responsive website for Ballia's Food Palace Family Restaurant with online menu and admin dashboard.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
